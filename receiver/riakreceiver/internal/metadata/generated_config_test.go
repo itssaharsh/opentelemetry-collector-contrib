@@ -20,29 +20,37 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	}{
 		{
 			name: "default",
-			want: DefaultMetricsBuilderConfig(),
+			want: NewDefaultMetricsBuilderConfig(),
 		},
 		{
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					RiakMemoryLimit: MetricConfig{
+					RiakMemoryLimit: RiakMemoryLimitMetricConfig{
 						Enabled: true,
 					},
-					RiakNodeOperationCount: MetricConfig{
+					RiakNodeOperationCount: RiakNodeOperationCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RiakNodeOperationCountMetricAttributeKey{RiakNodeOperationCountMetricAttributeKeyRequest},
+					},
+					RiakNodeOperationTimeMean: RiakNodeOperationTimeMeanMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []RiakNodeOperationTimeMeanMetricAttributeKey{RiakNodeOperationTimeMeanMetricAttributeKeyRequest},
+					},
+					RiakNodeReadRepairCount: RiakNodeReadRepairCountMetricConfig{
 						Enabled: true,
 					},
-					RiakNodeOperationTimeMean: MetricConfig{
-						Enabled: true,
+					RiakVnodeIndexOperationCount: RiakVnodeIndexOperationCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RiakVnodeIndexOperationCountMetricAttributeKey{RiakVnodeIndexOperationCountMetricAttributeKeyOperation},
 					},
-					RiakNodeReadRepairCount: MetricConfig{
-						Enabled: true,
-					},
-					RiakVnodeIndexOperationCount: MetricConfig{
-						Enabled: true,
-					},
-					RiakVnodeOperationCount: MetricConfig{
-						Enabled: true,
+					RiakVnodeOperationCount: RiakVnodeOperationCountMetricConfig{
+						Enabled:             true,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RiakVnodeOperationCountMetricAttributeKey{RiakVnodeOperationCountMetricAttributeKeyRequest},
 					},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
@@ -54,23 +62,31 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
-					RiakMemoryLimit: MetricConfig{
+					RiakMemoryLimit: RiakMemoryLimitMetricConfig{
 						Enabled: false,
 					},
-					RiakNodeOperationCount: MetricConfig{
+					RiakNodeOperationCount: RiakNodeOperationCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RiakNodeOperationCountMetricAttributeKey{RiakNodeOperationCountMetricAttributeKeyRequest},
+					},
+					RiakNodeOperationTimeMean: RiakNodeOperationTimeMeanMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategyAvg,
+						EnabledAttributes:   []RiakNodeOperationTimeMeanMetricAttributeKey{RiakNodeOperationTimeMeanMetricAttributeKeyRequest},
+					},
+					RiakNodeReadRepairCount: RiakNodeReadRepairCountMetricConfig{
 						Enabled: false,
 					},
-					RiakNodeOperationTimeMean: MetricConfig{
-						Enabled: false,
+					RiakVnodeIndexOperationCount: RiakVnodeIndexOperationCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RiakVnodeIndexOperationCountMetricAttributeKey{RiakVnodeIndexOperationCountMetricAttributeKeyOperation},
 					},
-					RiakNodeReadRepairCount: MetricConfig{
-						Enabled: false,
-					},
-					RiakVnodeIndexOperationCount: MetricConfig{
-						Enabled: false,
-					},
-					RiakVnodeOperationCount: MetricConfig{
-						Enabled: false,
+					RiakVnodeOperationCount: RiakVnodeOperationCountMetricConfig{
+						Enabled:             false,
+						AggregationStrategy: AggregationStrategySum,
+						EnabledAttributes:   []RiakVnodeOperationCountMetricAttributeKey{RiakVnodeOperationCountMetricAttributeKeyRequest},
 					},
 				},
 				ResourceAttributes: ResourceAttributesConfig{
@@ -82,7 +98,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := loadMetricsBuilderConfig(t, tt.name)
-			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(MetricConfig{}, ResourceAttributeConfig{}))
+			diff := cmp.Diff(tt.want, cfg, cmpopts.IgnoreUnexported(RiakMemoryLimitMetricConfig{}, RiakNodeOperationCountMetricConfig{}, RiakNodeOperationTimeMeanMetricConfig{}, RiakNodeReadRepairCountMetricConfig{}, RiakVnodeIndexOperationCountMetricConfig{}, RiakVnodeOperationCountMetricConfig{}, ResourceAttributeConfig{}))
 			require.Emptyf(t, diff, "Config mismatch (-expected +actual):\n%s", diff)
 		})
 	}
@@ -93,7 +109,7 @@ func loadMetricsBuilderConfig(t *testing.T, name string) MetricsBuilderConfig {
 	require.NoError(t, err)
 	sub, err := cm.Sub(name)
 	require.NoError(t, err)
-	cfg := DefaultMetricsBuilderConfig()
+	cfg := NewDefaultMetricsBuilderConfig()
 	require.NoError(t, sub.Unmarshal(&cfg, confmap.WithIgnoreUnused()))
 	return cfg
 }
